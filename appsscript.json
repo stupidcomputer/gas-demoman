@@ -1,0 +1,16 @@
+{
+  "timeZone": "America/Chicago",
+  "dependencies": {
+  },
+  "exceptionLogging": "STACKDRIVER",
+  "runtimeVersion": "V8",
+  "sheets": {
+    "macros": [{
+      "menuName": "Untitled Macro",
+      "functionName": "UntitledMacro"
+    }, {
+      "menuName": "Untitled Macro 2",
+      "functionName": "UntitledMacro2"
+    }]
+  }
+}
