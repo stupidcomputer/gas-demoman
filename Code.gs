@@ -1,4 +1,6 @@
-
+var _demographic_data = "*Demographic Data";
+var _site_information = "*Site Information";
+var _intern_data      = "*Intern Data";
 
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
@@ -32,7 +34,7 @@ function spread_init() {
     try {
       spreadsheet.deleteSheet(sheetsToRemove[sheet]);
     } catch { // ran out of spreadsheets to nuke, so rename it to the first thing we need
-      spreadsheet.getSheets()[0].setName("*Demographic Data")
+      spreadsheet.getSheets()[0].setName(_demographic_data)
     }
   }
 
@@ -50,21 +52,121 @@ function spread_init() {
   sheet.getCurrentCell().setValue('Ethnicity');
   sheet.getRange('F1').activate();
   sheet.getCurrentCell().setValue('Race');
-  sheet.getRange('F2').activate();
 
   var newSheet = spreadsheet.insertSheet();
-  newSheet.setName("*Site Information")
+  newSheet.setName(_site_information)
   newSheet.getRange('A1').activate();
   newSheet.getCurrentCell().setValue('Site Name');
   newSheet.getRange('B1').activate();
   newSheet.getCurrentCell().setValue('Date');
   newSheet.getRange('C1').activate();
-  newSheet.getCurrentCell().setValue('Time');
-  newSheet.getRange('D1').activate();
   newSheet.getCurrentCell().setValue('Those Present');
-  newSheet.getRange('E1').activate();
+  newSheet.getRange('D1').activate();
   newSheet.getCurrentCell().setValue('Data Leads');
-  newSheet.getRange('F1').activate();
+  newSheet.getRange('E1').activate();
   newSheet.getCurrentCell().setValue('Who Collected?');
-  newSheet.getRange('F2').activate();
+
+  newSheet = spreadsheet.insertSheet();
+  newSheet.setName(_intern_data)
+  newSheet.getRange('A1').activate();
+  newSheet.getCurrentCell().setValue('First Name');
+  newSheet.getRange('B1').activate();
+  newSheet.getCurrentCell().setValue('Last Name');
+  newSheet.getRange('C1').activate();
+  newSheet.getCurrentCell().setValue('Gender');
+  newSheet.getRange('D1').activate();
+  newSheet.getCurrentCell().setValue('Ethnicity');
+  newSheet.getRange('E1').activate();
+  newSheet.getCurrentCell().setValue('Race');
+}
+
+function get_titled_spreadsheet_contents(sheet_name) {
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheet_name);
+  var rows = spreadsheet.getDataRange().getValues();
+  rows.shift(); /* remove the column headers from the data */
+
+  return rows;
+}
+
+/*
+ * @param {string} site_name
+ */
+function get_demographic_records_for_site(site_name) {
+  var rows = get_titled_spreadsheet_contents(_demographic_data);
+  var output = [];
+
+  for(row of rows) {
+    if(row[0] === site_name) {
+      output = output.concat(Array([1]).fill({
+        "site_name": row[0],
+        "age": row[2],
+        "gender": row[3],
+        "ethnicity": row[4],
+        "race": row[4],
+      }));
+    }
+  }
+
+  return output;
+}
+
+function get_sites() {
+  var rows = get_titled_spreadsheet_contents(_site_information);
+  var output = [];
+
+  for(row of rows) {
+    output.push({
+      "site_name": row[0],
+      "date": row[1],
+      "present": row[2],
+      "data_leads": row[3],
+      "compiled_by": row[4],
+      "attached_records": [],
+    })
+  }
+
+  return output;
+}
+
+function get_intern_data() {
+  var rows = get_titled_spreadsheet_contents(_intern_data);
+  var output = {};
+
+  for(row of rows) {
+    var no_last_name = row[1] === "";
+    /* if there's no last name, then just use the first name
+     * as the key */
+    var key = row[0].concat(no_last_name ? "" : " ".concat(row[1]))
+    output[key] = {
+      "first_name": row[0],
+      "last_name": row[1],
+      "calculated_name": key,
+      "age": "Intern",
+      "gender": row[2],
+      "ethnicity": row[3],
+      "race": row[4],
+    };
+  }
+
+  return output;
+}
+
+function collate_data() {
+  var sites = get_sites();
+  var intern_data = get_intern_data();
+
+  for(site of sites) {
+    var name = site["site_name"];
+    var data = get_demographic_records_for_site(name);
+
+    site["attached_records"].push(...data);
+    var those_present = site["present"].split(',').map((x) => x.trim());
+
+    for(person of those_present) {
+      site["attached_records"].push(
+        intern_data[person]
+      )
+    }
+    var data_leads = site["data_leads"].split(',').map((x) => x.trim());
+  }
 }
