@@ -175,6 +175,49 @@ function collate_site_data() {
   return sites;
 }
 
+function get_sums(data, field_name, human_readable) {
+  var collated = {}
+  
+  for(datum of data) {
+    var result = datum[field_name];
+
+    if(datum[field_name] in collated) {
+      collated[datum[field_name]] += 1
+    } else {
+      collated[datum[field_name]] = 1
+    }
+  }
+
+  var output = [[
+    human_readable, "Count"
+  ]]
+
+  for(const [key, value] of Object.entries(collated)) {
+    output.push([String(key), String(value)]);
+  }
+
+  /* pad out the rest */
+  var output_len = output.length;
+  output = output.concat(Array(7 - output_len).fill(["", ""]))
+  return output;
+}
+
+function filtration(data, interns, adults, children) {
+  var output = [];
+
+  for(datum of data) {
+    if(interns && datum.age == "Intern") {
+      output.push(datum);
+    } else if(adults && datum.age == "Adult") {
+      output.push(datum);
+    } else if(children && datum.age == "Child") {
+      output.push(datum);
+    }
+  }
+
+  return output;
+}
+
 function regenerate() {
   /* remove outdated sheets */
   var spreadsheet = SpreadsheetApp.getActive()
@@ -199,7 +242,7 @@ function regenerate() {
     newSheet.getRange('A5:H5').activate().mergeAcross();
     newSheet.getRange('A6:H6').activate().mergeAcross();
     newSheet.getRange('A1:H1').activate();
-    newSheet.getCurrentCell().setValue(`Information for ${site["site_name"]} site attendance at {time} on {date}`);
+    newSheet.getCurrentCell().setValue(`Information for ${site.site_name} site attendance at ${site.date.toTimeString()} on ${site.date.toLocaleDateString()}`);
     newSheet.getRange('A2:H2').activate();
     newSheet.getCurrentCell().setValue('Fields not persent should be assumed 0.');
     newSheet.getRange('A3:H3').activate();
@@ -211,5 +254,68 @@ function regenerate() {
     newSheet.getRange('A6:H6').activate();
     newSheet.getCurrentCell().setValue(`On-Site lead: ${site["on_site_leads"]}`);
     newSheet.getRange('A8').activate();
+    newSheet.getRange('A8:H8').activate().mergeAcross()
+    newSheet.getActiveRangeList().setFontStyle('italic')
+    newSheet.getCurrentCell().setValue('Combined Totals')
+    newSheet.getRange('A16:H16').activate().mergeAcross()
+    newSheet.getActiveRangeList().setFontStyle('italic')
+    newSheet.getCurrentCell().setValue('Combined Totals (without interns)')
+    newSheet.getRange('A24:H24').activate().mergeAcross()
+    newSheet.getActiveRangeList().setFontStyle('italic')
+    newSheet.getCurrentCell().setValue('Adults')
+    newSheet.getRange('A32:H32').activate().mergeAcross()
+    newSheet.getActiveRangeList().setFontStyle('italic')
+    newSheet.getCurrentCell().setValue('Children')
+    newSheet.getRange('A40:H40').activate().mergeAcross()
+    newSheet.getActiveRangeList().setFontStyle('italic')
+    newSheet.getCurrentCell().setValue('Interns')
+    newSheet.getRange('A41').activate();
+
+    /* generate "Age" demographic information */
+    var to_insert = get_sums(filtration(site.attached_records, true, true, true), "age", "Age");
+    newSheet.getRange("A9:B15").setValues(to_insert);
+    to_insert = get_sums(filtration(site.attached_records, false, true, true), "age", "Age");
+    newSheet.getRange("A17:B23").setValues(to_insert);
+    to_insert = get_sums(filtration(site.attached_records, false, true, false), "age", "Age");
+    newSheet.getRange("A25:B31").setValues(to_insert);
+    to_insert = get_sums(filtration(site.attached_records, false, false, true), "age", "Age");
+    newSheet.getRange("A33:B39").setValues(to_insert);
+    to_insert = get_sums(filtration(site.attached_records, true, false, false), "age", "Age");
+    newSheet.getRange("A41:B47").setValues(to_insert);
+
+    /* generate "Gender" demographic information */
+    to_insert = get_sums(filtration(site.attached_records, true, true, true), "gender", "Gender");
+    newSheet.getRange("D9:E15").setValues(to_insert);
+    to_insert = get_sums(filtration(site.attached_records, false, true, true), "gender", "Gender");
+    newSheet.getRange("D17:E23").setValues(to_insert);
+    to_insert = get_sums(filtration(site.attached_records, false, true, false), "gender", "Gender");
+    newSheet.getRange("D25:E31").setValues(to_insert);
+    to_insert = get_sums(filtration(site.attached_records, false, false, true), "gender", "Gender");
+    newSheet.getRange("D33:E39").setValues(to_insert);
+    to_insert = get_sums(filtration(site.attached_records, true, false, false), "gender", "Gender");
+    newSheet.getRange("D41:E47").setValues(to_insert);
+
+    /* same thing for "Ethnicity" and "Race" */
+    to_insert = get_sums(filtration(site.attached_records, true, true, true), "ethnicity", "Ethnicity");
+    newSheet.getRange("G9:H15").setValues(to_insert);
+    to_insert = get_sums(filtration(site.attached_records, false, true, true), "ethnicity", "Ethnicity");
+    newSheet.getRange("G17:H23").setValues(to_insert);
+    to_insert = get_sums(filtration(site.attached_records, false, true, false), "ethnicity", "Ethnicity");
+    newSheet.getRange("G25:H31").setValues(to_insert);
+    to_insert = get_sums(filtration(site.attached_records, false, false, true), "ethnicity", "Ethnicity");
+    newSheet.getRange("G33:H39").setValues(to_insert);
+    to_insert = get_sums(filtration(site.attached_records, true, false, false), "ethnicity", "Ethnicity");
+    newSheet.getRange("G41:H47").setValues(to_insert);
+
+    to_insert = get_sums(filtration(site.attached_records, true, true, true), "race", "Race");
+    newSheet.getRange("J9:K15").setValues(to_insert);
+    to_insert = get_sums(filtration(site.attached_records, false, true, true), "race", "Race");
+    newSheet.getRange("J17:K23").setValues(to_insert);
+    to_insert = get_sums(filtration(site.attached_records, false, true, false), "race", "Race");
+    newSheet.getRange("J25:K31").setValues(to_insert);
+    to_insert = get_sums(filtration(site.attached_records, false, false, true), "race", "Race");
+    newSheet.getRange("J33:K39").setValues(to_insert);
+    to_insert = get_sums(filtration(site.attached_records, true, false, false), "race", "Race");
+    newSheet.getRange("J41:K47").setValues(to_insert);
   }
 }
