@@ -64,6 +64,8 @@ function spread_init() {
   newSheet.getRange('D1').activate();
   newSheet.getCurrentCell().setValue('Data Leads');
   newSheet.getRange('E1').activate();
+  newSheet.getCurrentCell().setValue('On-Site Lead(s)');
+  newSheet.getRange('F1').activate();
   newSheet.getCurrentCell().setValue('Who Collected?');
 
   newSheet = spreadsheet.insertSheet();
@@ -120,7 +122,8 @@ function get_sites() {
       "date": row[1],
       "present": row[2],
       "data_leads": row[3],
-      "compiled_by": row[4],
+      "on_site_leads": row[4],
+      "compiled_by": row[5],
       "attached_records": [],
     })
   }
@@ -151,7 +154,7 @@ function get_intern_data() {
   return output;
 }
 
-function collate_data() {
+function collate_site_data() {
   var sites = get_sites();
   var intern_data = get_intern_data();
 
@@ -167,6 +170,46 @@ function collate_data() {
         intern_data[person]
       )
     }
-    var data_leads = site["data_leads"].split(',').map((x) => x.trim());
+  }
+
+  return sites;
+}
+
+function regenerate() {
+  /* remove outdated sheets */
+  var spreadsheet = SpreadsheetApp.getActive()
+  var sheetList = spreadsheet.getSheets().map((x) => x.getName());
+
+  for(sheet of sheetList) {
+    if(sheet[0] === ">") {
+      spreadsheet.deleteSheet(spreadsheet.getSheetByName(sheet));
+    }
+  }
+
+  var sites = collate_site_data();
+  for(site of sites) {
+    var newSheet = spreadsheet.insertSheet(spreadsheet.getNumSheets());
+    newSheet.setName(">".concat(site["site_name"]))
+
+    /* create the header of the spreadsheet */
+    newSheet.getRange('A1:H1').activate().mergeAcross();
+    newSheet.getRange('A2:H2').activate().mergeAcross();
+    newSheet.getRange('A3:H3').activate().mergeAcross();
+    newSheet.getRange('A4:H4').activate().mergeAcross();
+    newSheet.getRange('A5:H5').activate().mergeAcross();
+    newSheet.getRange('A6:H6').activate().mergeAcross();
+    newSheet.getRange('A1:H1').activate();
+    newSheet.getCurrentCell().setValue(`Information for ${site["site_name"]} site attendance at {time} on {date}`);
+    newSheet.getRange('A2:H2').activate();
+    newSheet.getCurrentCell().setValue('Fields not persent should be assumed 0.');
+    newSheet.getRange('A3:H3').activate();
+    newSheet.getCurrentCell().setValue(`Data submitted by ${site["compiled_by"]}`);
+    newSheet.getRange('A4:H4').activate();
+    newSheet.getCurrentCell().setValue(`Interns present: ${site["present"]}`);
+    newSheet.getRange('A5:H5').activate();
+    newSheet.getCurrentCell().setValue(`Data leads: ${site["data_leads"]}`);
+    newSheet.getRange('A6:H6').activate();
+    newSheet.getCurrentCell().setValue(`On-Site lead: ${site["on_site_leads"]}`);
+    newSheet.getRange('A8').activate();
   }
 }
