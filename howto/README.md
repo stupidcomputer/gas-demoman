@@ -97,6 +97,15 @@ You should see some spreadsheets being magically created, and when you look at t
 
 Whenever you make a change to a sheet with an asterisk in front of it, the sheets with the greater than symbol do not synchronize automatically. You need to repopulate them manually by clicking on the "Regenerate Reporting Spreadsheets" button.
 
+### I've got an error message
+
+Below is a series of error messages you may get when using this software, and an explanation of what might have gone wrong.
+
+**Couldn't find an intern -- skipping**
+
+This means that the software couldn't find an intern listed in one of the individuals present within the Site Information sheet.
+Make sure that each person who you reference in the "Those Present" column actually exist in the "Intern Data" sheet, and this error goes away.
+
 ## Questions?
 
 If you have any questions, email [me](mailto:ryan@beepboop.systems).

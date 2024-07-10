@@ -206,6 +206,11 @@ function filtration(data, interns, adults, children) {
   var output = [];
 
   for(datum of data) {
+    if(datum === undefined) {
+      SpreadsheetApp.getUi().alert("Couldn't find an intern -- skipping. See the manual for more information.")
+      continue;
+    }
+
     if(interns && datum.age == "Intern") {
       output.push(datum);
     } else if(adults && datum.age == "Adult") {
