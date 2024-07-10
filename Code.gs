@@ -99,12 +99,12 @@ function get_demographic_records_for_site(site_name) {
 
   for(row of rows) {
     if(row[0] === site_name) {
-      output = output.concat(Array([1]).fill({
+      output = output.concat(Array(row[1]).fill({
         "site_name": row[0],
         "age": row[2],
         "gender": row[3],
         "ethnicity": row[4],
-        "race": row[4],
+        "race": row[5],
       }));
     }
   }
