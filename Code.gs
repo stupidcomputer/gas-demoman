@@ -98,7 +98,15 @@ function get_demographic_records_for_site(site_name) {
   var output = [];
 
   for(row of rows) {
-    if(row[0] === site_name) {
+    if(site_name != null && row[0] === site_name) {
+      output = output.concat(Array(row[1]).fill({
+        "site_name": row[0],
+        "age": row[2],
+        "gender": row[3],
+        "ethnicity": row[4],
+        "race": row[5],
+      }));
+    } else if(site_name === null) {
       output = output.concat(Array(row[1]).fill({
         "site_name": row[0],
         "age": row[2],
@@ -323,4 +331,295 @@ function regenerate() {
     to_insert = get_sums(filtration(site.attached_records, true, false, false), "race", "Race");
     newSheet.getRange("J41:K47").setValues(to_insert);
   }
+
+  create_final_report();
 }
+
+function get_total_of_attribute(data, attribute, field) {
+  var count = 0;
+  for(datum of data) {
+    if(datum[field] === attribute) {
+      count++;
+    }
+  }
+
+  return count
+}
+
+function create_final_report() {
+  var spreadsheet = SpreadsheetApp.getActive();
+  spreadsheet.insertSheet();
+  try {
+    spreadsheet.getActiveSheet().setName('>FINAL REPORT');
+  } catch {};
+  spreadsheet.getRange('A1:F3').activate()
+  .merge();
+  spreadsheet.getActiveRangeList().setHorizontalAlignment('center')
+  .setFontSize(18)
+  .setFontSize(18);
+  var total_served = filtration(get_demographic_records_for_site(null), false, false, true).length
+  spreadsheet.getCurrentCell().setValue(`TOTAL CHILDREN SERVED: ${total_served}`);
+  spreadsheet.getActiveRangeList().setVerticalAlignment('middle');
+  spreadsheet.getRange('A4:B4').activate()
+  .mergeAcross();
+  spreadsheet.getActiveRangeList().setHorizontalAlignment('center');
+  spreadsheet.getCurrentCell().setRichTextValue(SpreadsheetApp.newRichTextValue()
+  .setText('By gender')
+  .setTextStyle(0, 9, SpreadsheetApp.newTextStyle()
+  .setItalic(true)
+  .build())
+  .build());
+  spreadsheet.getRange('A5').activate();
+  spreadsheet.getCurrentCell().setValue('Male');
+  spreadsheet.getRange('A6').activate();
+  spreadsheet.getCurrentCell().setValue('Female');
+  spreadsheet.getRange('A7').activate();
+  spreadsheet.getCurrentCell().setValue('Unknown');
+  spreadsheet.getRange('A9:B9').activate()
+  .mergeAcross();
+  spreadsheet.getActiveRangeList().setHorizontalAlignment('center');
+  spreadsheet.getCurrentCell().setRichTextValue(SpreadsheetApp.newRichTextValue()
+  .setText('By ethnicity')
+  .setTextStyle(0, 12, SpreadsheetApp.newTextStyle()
+  .setItalic(true)
+  .build())
+  .build());
+  spreadsheet.getRange('A10').activate();
+  spreadsheet.getCurrentCell().setValue('Hispanic');
+  spreadsheet.getRange('A11').activate();
+  spreadsheet.getCurrentCell().setValue('Not Hispanic');
+  spreadsheet.getRange('A13:B13').activate();
+  spreadsheet.getActiveRangeList().setHorizontalAlignment('center');
+  spreadsheet.getActiveRange().mergeAcross();
+  spreadsheet.getActiveRangeList().setFontStyle('italic');
+  spreadsheet.getCurrentCell().setValue('By race');
+  spreadsheet.getRange('A14').activate();
+  spreadsheet.getCurrentCell().setValue('American Indian/Alaskian Native');
+  spreadsheet.getRange('A15').activate();
+  spreadsheet.getCurrentCell().setValue('Asian');
+  spreadsheet.getRange('A16').activate();
+  spreadsheet.getCurrentCell().setValue('Black/African American');
+  spreadsheet.getRange('A17').activate();
+  spreadsheet.getCurrentCell().setValue('Native Hawaiian/Other Pacific Islander');
+  spreadsheet.getRange('A18').activate();
+  spreadsheet.getCurrentCell().setValue('White');
+  spreadsheet.getRange('A19').activate();
+  spreadsheet.getCurrentCell().setValue('More than one race');
+  spreadsheet.getRange('A20').activate();
+  spreadsheet.getCurrentCell().setValue('Unknown');
+  spreadsheet.getRange('A21').activate();
+  spreadsheet.getActiveSheet().setColumnWidth(1, 243);
+  spreadsheet.getRangeList(['A13:B13', 'A9:B9', 'A4:B4']).activate()
+  .setBackground('#cccccc');
+
+  var data = filtration(get_demographic_records_for_site(null), false, false, true);
+  spreadsheet.getRange("B5").setValue(
+    get_total_of_attribute(data, "Male", "gender")
+  )
+  spreadsheet.getRange("B6").setValue(
+    get_total_of_attribute(data, "Female", "gender")
+  )
+  spreadsheet.getRange("B7").setValue(
+    get_total_of_attribute(data, "Unknown", "gender")
+  )
+  spreadsheet.getRange("B10").setValue(
+    get_total_of_attribute(data, "Hispanic", "ethnicity")
+  )
+  spreadsheet.getRange("B11").setValue(
+    get_total_of_attribute(data, "Not Hispanic", "ethnicity")
+  )
+  spreadsheet.getRange("B14").setValue(
+    get_total_of_attribute(data, "American Indian/Alaskian Native", "race")
+  )
+  spreadsheet.getRange("B15").setValue(
+    get_total_of_attribute(data, "Asian", "race")
+  )
+  spreadsheet.getRange("B16").setValue(
+    get_total_of_attribute(data, "Black/African American", "race")
+  )
+  spreadsheet.getRange("B17").setValue(
+    get_total_of_attribute(data, "Native Hawaiian/Other Pacific Islander", "race")
+  )
+  spreadsheet.getRange("B18").setValue(
+    get_total_of_attribute(data, "White", "race")
+  )
+  spreadsheet.getRange("B19").setValue(
+    get_total_of_attribute(data, "More than one race", "race")
+  )
+  spreadsheet.getRange("B20").setValue(
+    get_total_of_attribute(data, "Unknown", "race")
+  )
+
+  spreadsheet.getRange('A14:B20').activate();
+  var sheet = spreadsheet.getActiveSheet();
+  var chart = sheet.newChart()
+  .asPieChart()
+  .addRange(spreadsheet.getRange('A14:B20'))
+  .setMergeStrategy(Charts.ChartMergeStrategy.MERGE_COLUMNS)
+  .setTransposeRowsAndColumns(false)
+  .setNumHeaders(0)
+  .setHiddenDimensionStrategy(Charts.ChartHiddenDimensionStrategy.IGNORE_BOTH)
+  .setOption('useFirstColumnAsDomain', true)
+  .setOption('isStacked', 'false')
+  .setPosition(10, 1, 238, 21)
+  .build();
+  sheet.insertChart(chart);
+  var charts = sheet.getCharts();
+  chart = charts[charts.length - 1];
+  sheet.removeChart(chart);
+  chart = sheet.newChart()
+  .asPieChart()
+  .addRange(spreadsheet.getRange('A14:B20'))
+  .setMergeStrategy(Charts.ChartMergeStrategy.MERGE_COLUMNS)
+  .setTransposeRowsAndColumns(false)
+  .setNumHeaders(0)
+  .setHiddenDimensionStrategy(Charts.ChartHiddenDimensionStrategy.IGNORE_BOTH)
+  .setOption('useFirstColumnAsDomain', true)
+  .setOption('isStacked', 'false')
+  .setPosition(4, 3, 98, 1)
+  .build();
+  sheet.insertChart(chart);
+  spreadsheet.getRange('A5:B7').activate();
+  spreadsheet.setCurrentCell(spreadsheet.getRange('B7'));
+  chart = sheet.newChart()
+  .asPieChart()
+  .addRange(spreadsheet.getRange('A5:B7'))
+  .setMergeStrategy(Charts.ChartMergeStrategy.MERGE_COLUMNS)
+  .setTransposeRowsAndColumns(false)
+  .setNumHeaders(0)
+  .setHiddenDimensionStrategy(Charts.ChartHiddenDimensionStrategy.IGNORE_BOTH)
+  .setOption('useFirstColumnAsDomain', true)
+  .setOption('isStacked', 'false')
+  .setOption('title', 'TOTAL SERVED: ${xx}')
+  .setPosition(10, 1, 238, 21)
+  .build();
+  sheet.insertChart(chart);
+  charts = sheet.getCharts();
+  chart = charts[charts.length - 1];
+  sheet.removeChart(chart);
+  chart = sheet.newChart()
+  .asPieChart()
+  .addRange(spreadsheet.getRange('A5:B7'))
+  .setMergeStrategy(Charts.ChartMergeStrategy.MERGE_COLUMNS)
+  .setTransposeRowsAndColumns(false)
+  .setNumHeaders(0)
+  .setHiddenDimensionStrategy(Charts.ChartHiddenDimensionStrategy.IGNORE_BOTH)
+  .setOption('useFirstColumnAsDomain', true)
+  .setOption('isStacked', 'false')
+  .setOption('title', 'TOTAL SERVED: ${xx}')
+  .setPosition(21, 3, 98, 15)
+  .build();
+  sheet.insertChart(chart);
+  charts = sheet.getCharts();
+  chart = charts[charts.length - 1];
+  sheet.removeChart(chart);
+  chart = sheet.newChart()
+  .asPieChart()
+  .addRange(spreadsheet.getRange('A5:B7'))
+  .setMergeStrategy(Charts.ChartMergeStrategy.MERGE_COLUMNS)
+  .setTransposeRowsAndColumns(false)
+  .setNumHeaders(0)
+  .setHiddenDimensionStrategy(Charts.ChartHiddenDimensionStrategy.IGNORE_BOTH)
+  .setOption('bubble.stroke', '#000000')
+  .setOption('useFirstColumnAsDomain', true)
+  .setOption('isStacked', 'false')
+  .setOption('title', 'Gender breakdown')
+  .setOption('annotations.domain.textStyle.color', '#808080')
+  .setOption('textStyle.color', '#000000')
+  .setOption('legend.textStyle.color', '#1a1a1a')
+  .setOption('pieSliceTextStyle.color', '#000000')
+  .setOption('titleTextStyle.color', '#757575')
+  .setPosition(21, 3, 98, 15)
+  .build();
+  sheet.insertChart(chart);
+  charts = sheet.getCharts();
+  chart = charts[0];
+  sheet.removeChart(chart);
+  chart = sheet.newChart()
+  .asPieChart()
+  .addRange(spreadsheet.getRange('A14:B20'))
+  .setMergeStrategy(Charts.ChartMergeStrategy.MERGE_COLUMNS)
+  .setTransposeRowsAndColumns(false)
+  .setNumHeaders(0)
+  .setHiddenDimensionStrategy(Charts.ChartHiddenDimensionStrategy.IGNORE_BOTH)
+  .setOption('bubble.stroke', '#000000')
+  .setOption('useFirstColumnAsDomain', true)
+  .setOption('isStacked', 'false')
+  .setOption('title', 'Race breakdown')
+  .setOption('annotations.domain.textStyle.color', '#808080')
+  .setOption('textStyle.color', '#000000')
+  .setOption('legend.textStyle.color', '#1a1a1a')
+  .setOption('pieSliceTextStyle.color', '#000000')
+  .setOption('titleTextStyle.color', '#757575')
+  .setOption('annotations.total.textStyle.color', '#808080')
+  .setPosition(4, 3, 98, 1)
+  .build();
+  sheet.insertChart(chart);
+  spreadsheet.getRange('A10:B11').activate();
+  spreadsheet.setCurrentCell(spreadsheet.getRange('B11'));
+  chart = sheet.newChart()
+  .asPieChart()
+  .addRange(spreadsheet.getRange('A10:B11'))
+  .setMergeStrategy(Charts.ChartMergeStrategy.MERGE_COLUMNS)
+  .setTransposeRowsAndColumns(false)
+  .setNumHeaders(0)
+  .setHiddenDimensionStrategy(Charts.ChartHiddenDimensionStrategy.IGNORE_BOTH)
+  .setOption('useFirstColumnAsDomain', true)
+  .setOption('isStacked', 'false')
+  .setPosition(10, 1, 238, 21)
+  .build();
+  sheet.insertChart(chart);
+  charts = sheet.getCharts();
+  chart = charts[charts.length - 1];
+  sheet.removeChart(chart);
+  chart = sheet.newChart()
+  .asPieChart()
+  .addRange(spreadsheet.getRange('A10:B11'))
+  .setMergeStrategy(Charts.ChartMergeStrategy.MERGE_COLUMNS)
+  .setTransposeRowsAndColumns(false)
+  .setNumHeaders(0)
+  .setHiddenDimensionStrategy(Charts.ChartHiddenDimensionStrategy.IGNORE_BOTH)
+  .setOption('useFirstColumnAsDomain', true)
+  .setOption('isStacked', 'false')
+  .setPosition(39, 3, 98, 14)
+  .build();
+  sheet.insertChart(chart);
+  charts = sheet.getCharts();
+  chart = charts[charts.length - 1];
+  sheet.removeChart(chart);
+  chart = sheet.newChart()
+  .asPieChart()
+  .addRange(spreadsheet.getRange('A10:B11'))
+  .setMergeStrategy(Charts.ChartMergeStrategy.MERGE_COLUMNS)
+  .setTransposeRowsAndColumns(false)
+  .setNumHeaders(0)
+  .setHiddenDimensionStrategy(Charts.ChartHiddenDimensionStrategy.IGNORE_BOTH)
+  .setOption('useFirstColumnAsDomain', true)
+  .setOption('isStacked', 'false')
+  .setPosition(39, 3, 98, 8)
+  .build();
+  sheet.insertChart(chart);
+  charts = sheet.getCharts();
+  chart = charts[charts.length - 1];
+  sheet.removeChart(chart);
+  chart = sheet.newChart()
+  .asPieChart()
+  .addRange(spreadsheet.getRange('A10:B11'))
+  .setMergeStrategy(Charts.ChartMergeStrategy.MERGE_COLUMNS)
+  .setTransposeRowsAndColumns(false)
+  .setNumHeaders(0)
+  .setHiddenDimensionStrategy(Charts.ChartHiddenDimensionStrategy.IGNORE_BOTH)
+  .setOption('bubble.stroke', '#000000')
+  .setOption('useFirstColumnAsDomain', true)
+  .setOption('isStacked', 'false')
+  .setOption('title', 'Ethnicity breakdown')
+  .setOption('annotations.domain.textStyle.color', '#808080')
+  .setOption('textStyle.color', '#000000')
+  .setOption('legend.textStyle.color', '#1a1a1a')
+  .setOption('pieSliceTextStyle.color', '#000000')
+  .setOption('titleTextStyle.color', '#757575')
+  .setPosition(39, 3, 98, 8)
+  .build();
+  sheet.insertChart(chart);
+  spreadsheet.getRange('A41').activate();
+};
