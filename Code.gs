@@ -374,7 +374,7 @@ function create_final_report() {
   spreadsheet.getRange('A6').activate();
   spreadsheet.getCurrentCell().setValue('Female');
   spreadsheet.getRange('A7').activate();
-  spreadsheet.getCurrentCell().setValue('Unknown');
+  spreadsheet.getCurrentCell().setValue('Unknown/Other');
   spreadsheet.getRange('A9:B9').activate()
   .mergeAcross();
   spreadsheet.getActiveRangeList().setHorizontalAlignment('center');
@@ -420,7 +420,7 @@ function create_final_report() {
     get_total_of_attribute(data, "Female", "gender")
   )
   spreadsheet.getRange("B7").setValue(
-    get_total_of_attribute(data, "Unknown", "gender")
+    get_total_of_attribute(data, "Unknown/Other", "gender")
   )
   spreadsheet.getRange("B10").setValue(
     get_total_of_attribute(data, "Hispanic", "ethnicity")
